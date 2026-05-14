@@ -1,0 +1,10 @@
+# Aldri commit parameter-filer med secrets
+parameters/*.bicepparam
+!parameters/*.example.bicepparam
+
+# Azure CLI cache
+.azure/
+
+# Lokal deploy-output
+*.json.bak
+deploy-output.json

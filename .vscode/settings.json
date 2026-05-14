@@ -1,0 +1,12 @@
+{
+  "editor.formatOnSave": true,
+  "bicep.enableOutputsView": true,
+  "bicep.suppressedWarnings": [],
+  "files.associations": {
+    "*.bicepparam": "bicep"
+  },
+  "editor.defaultFormatter": "ms-azuretools.vscode-bicep",
+  "[bicep]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-bicep"
+  }
+}

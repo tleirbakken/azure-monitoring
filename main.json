@@ -1,0 +1,1644 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "17856341713683058421"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "norwayeast",
+      "metadata": {
+        "description": "Azure region for all monitoring resources"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "allowedValues": [
+        "dev",
+        "prod"
+      ]
+    },
+    "workspaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Log Analytics Workspace name"
+      }
+    },
+    "appInsightsName": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights name"
+      }
+    },
+    "retentionInDays": {
+      "type": "int",
+      "minValue": 30,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Data retention in days (30 dev / 90 prod)"
+      }
+    },
+    "dailyQuotaGb": {
+      "type": "int",
+      "defaultValue": -1,
+      "metadata": {
+        "description": "Daily ingestion cap in GB (-1 = no cap)"
+      }
+    },
+    "actionGroupShortName": {
+      "type": "string",
+      "maxLength": 12,
+      "metadata": {
+        "description": "Short name in alert notifications (max 12 chars)"
+      }
+    },
+    "emailReceivers": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Email receivers: [{ name: string, emailAddress: string }]"
+      }
+    },
+    "webhookReceivers": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Webhook/Teams receivers: [{ name: string, serviceUri: string }]"
+      }
+    },
+    "eventHubNamespaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Event Hub Namespace name"
+      }
+    },
+    "eventHubName": {
+      "type": "string",
+      "metadata": {
+        "description": "Event Hub name for log export"
+      }
+    },
+    "eventHubSku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ]
+    },
+    "frontDoorProfileName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Front Door profile name. Leave empty to skip this diag module."
+      }
+    },
+    "frontDoorResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the Front Door profile"
+      }
+    },
+    "containerAppsEnvironmentName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Container Apps managed environment name. Leave empty to skip."
+      }
+    },
+    "containerAppsResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the Container Apps environment"
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "VNet name (used for flow log naming). Leave empty to skip."
+      }
+    },
+    "vnetResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Full ARM resource ID of the VNet, e.g. /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Network/virtualNetworks/{name}"
+      }
+    },
+    "flowLogStorageAccountId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Storage Account resource ID for raw VNet flow log storage"
+      }
+    },
+    "networkWatcherName": {
+      "type": "string",
+      "defaultValue": "NetworkWatcher_norwayeast",
+      "metadata": {
+        "description": "Network Watcher name for the deployment region"
+      }
+    },
+    "networkWatcherResourceGroupName": {
+      "type": "string",
+      "defaultValue": "NetworkWatcherRG",
+      "metadata": {
+        "description": "Resource group containing the Network Watcher (default: NetworkWatcherRG)"
+      }
+    },
+    "trafficAnalyticsInterval": {
+      "type": "int",
+      "defaultValue": 10,
+      "allowedValues": [
+        10,
+        60
+      ],
+      "metadata": {
+        "description": "Traffic Analytics aggregation interval in minutes"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Storage account name. Leave empty to skip."
+      }
+    },
+    "storageResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the storage account"
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Key Vault name. Leave empty to skip."
+      }
+    },
+    "keyVaultResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the Key Vault"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "environment": "[parameters('environment')]",
+        "managedBy": "bicep",
+        "solution": "azure-monitoring"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-log-analytics",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "workspaceName": {
+            "value": "[parameters('workspaceName')]"
+          },
+          "appInsightsName": {
+            "value": "[parameters('appInsightsName')]"
+          },
+          "retentionInDays": {
+            "value": "[parameters('retentionInDays')]"
+          },
+          "dailyQuotaGb": {
+            "value": "[parameters('dailyQuotaGb')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "10927960802584268612"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for all resources"
+              }
+            },
+            "environment": {
+              "type": "string",
+              "allowedValues": [
+                "dev",
+                "prod"
+              ],
+              "metadata": {
+                "description": "Environment name — controls sampling rate and naming"
+              }
+            },
+            "workspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Log Analytics Workspace"
+              }
+            },
+            "appInsightsName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Application Insights instance"
+              }
+            },
+            "retentionInDays": {
+              "type": "int",
+              "minValue": 30,
+              "maxValue": 730,
+              "metadata": {
+                "description": "Data retention in days (30–730)"
+              }
+            },
+            "dailyQuotaGb": {
+              "type": "int",
+              "defaultValue": -1,
+              "metadata": {
+                "description": "Daily ingestion cap in GB. Use -1 for no cap."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('workspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": "[parameters('retentionInDays')]",
+                "workspaceCapping": {
+                  "dailyQuotaGb": "[parameters('dailyQuotaGb')]"
+                },
+                "features": {
+                  "enableLogAccessUsingOnlyResourcePermissions": true
+                },
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('appInsightsName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]",
+                "IngestionMode": "LogAnalytics",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled",
+                "RetentionInDays": "[parameters('retentionInDays')]",
+                "SamplingPercentage": "[if(equals(parameters('environment'), 'dev'), 50, 100)]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "workspaceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+            },
+            "workspaceName": {
+              "type": "string",
+              "value": "[parameters('workspaceName')]"
+            },
+            "workspaceCustomerId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName')), '2023-09-01').customerId]"
+            },
+            "appInsightsId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Insights/components', parameters('appInsightsName'))]"
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Prefer connectionString over instrumentationKey for new SDK versions"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]"
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').InstrumentationKey]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-action-groups",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "actionGroupShortName": {
+            "value": "[parameters('actionGroupShortName')]"
+          },
+          "emailReceivers": {
+            "value": "[parameters('emailReceivers')]"
+          },
+          "webhookReceivers": {
+            "value": "[parameters('webhookReceivers')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "9357150697478485918"
+            }
+          },
+          "parameters": {
+            "environment": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment suffix used in the action group name"
+              }
+            },
+            "actionGroupShortName": {
+              "type": "string",
+              "maxLength": 12,
+              "metadata": {
+                "description": "Short name shown in alert emails and SMS (max 12 chars)"
+              }
+            },
+            "emailReceivers": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Email receivers. Each item: { name, emailAddress }"
+              }
+            },
+            "webhookReceivers": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Webhook/Teams receivers. Each item: { name, serviceUri }"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/actionGroups",
+              "apiVersion": "2023-01-01",
+              "name": "[format('ag-monitoring-{0}', parameters('environment'))]",
+              "location": "global",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "copy": [
+                  {
+                    "name": "emailReceivers",
+                    "count": "[length(parameters('emailReceivers'))]",
+                    "input": {
+                      "name": "[parameters('emailReceivers')[copyIndex('emailReceivers')].name]",
+                      "emailAddress": "[parameters('emailReceivers')[copyIndex('emailReceivers')].emailAddress]",
+                      "useCommonAlertSchema": true
+                    }
+                  },
+                  {
+                    "name": "webhookReceivers",
+                    "count": "[length(parameters('webhookReceivers'))]",
+                    "input": {
+                      "name": "[parameters('webhookReceivers')[copyIndex('webhookReceivers')].name]",
+                      "serviceUri": "[parameters('webhookReceivers')[copyIndex('webhookReceivers')].serviceUri]",
+                      "useCommonAlertSchema": true,
+                      "useAadAuth": false
+                    }
+                  }
+                ],
+                "enabled": true,
+                "groupShortName": "[parameters('actionGroupShortName')]"
+              }
+            }
+          ],
+          "outputs": {
+            "actionGroupId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Insights/actionGroups', format('ag-monitoring-{0}', parameters('environment')))]"
+            },
+            "actionGroupName": {
+              "type": "string",
+              "value": "[format('ag-monitoring-{0}', parameters('environment'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-alert-rules",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "actionGroupId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-action-groups'), '2025-04-01').outputs.actionGroupId.value]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "1392014956394328511"
+            }
+          },
+          "parameters": {
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace resource ID — all KQL alerts target this scope"
+              }
+            },
+            "actionGroupId": {
+              "type": "string",
+              "metadata": {
+                "description": "Action Group resource ID to notify on alert fire/resolve"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region — required for scheduledQueryRules resources"
+              }
+            },
+            "environment": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment name used in display names and resource names"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2022-06-15",
+              "name": "[format('alert-containerapps-errors-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "LogAlert",
+              "properties": {
+                "displayName": "[format('[{0}] Container Apps — Error spike (>10 in 5 min)', toUpper(parameters('environment')))]",
+                "description": "Console logs contain more than 10 Error/Exception lines in a 5-minute window",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT5M",
+                "windowSize": "PT10M",
+                "scopes": [
+                  "[parameters('workspaceId')]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "ContainerAppConsoleLogs\n| where TimeGenerated > ago(10m)\n| where Log has_any (\"Error\", \"Exception\", \"FATAL\", \"Unhandled\")\n| summarize ErrorCount = count() by ContainerAppName, bin(TimeGenerated, 5m)\n| where ErrorCount > 10\n",
+                      "timeAggregation": "Count",
+                      "threshold": 0,
+                      "operator": "GreaterThan",
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": {
+                  "actionGroups": [
+                    "[parameters('actionGroupId')]"
+                  ]
+                },
+                "autoMitigate": true
+              }
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2022-06-15",
+              "name": "[format('alert-keyvault-throttling-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "LogAlert",
+              "properties": {
+                "displayName": "[format('[{0}] Key Vault — Throttling (HTTP 429)', toUpper(parameters('environment')))]",
+                "description": "Key Vault is returning 429 Too Many Requests — client is being rate-limited",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT5M",
+                "windowSize": "PT15M",
+                "scopes": [
+                  "[parameters('workspaceId')]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "AzureDiagnostics\n| where TimeGenerated > ago(15m)\n| where ResourceProvider == \"MICROSOFT.KEYVAULT\"\n| where toint(httpStatusCode_d) == 429\n| summarize ThrottleCount = count() by Resource, bin(TimeGenerated, 5m)\n| where ThrottleCount > 5\n",
+                      "timeAggregation": "Count",
+                      "threshold": 0,
+                      "operator": "GreaterThan",
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": {
+                  "actionGroups": [
+                    "[parameters('actionGroupId')]"
+                  ]
+                },
+                "autoMitigate": true
+              }
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2022-06-15",
+              "name": "[format('alert-frontdoor-5xx-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "LogAlert",
+              "properties": {
+                "displayName": "[format('[{0}] Front Door — 5xx error spike (>20 in 5 min)', toUpper(parameters('environment')))]",
+                "description": "Azure Front Door is returning more than 20 server-side errors in a 5-minute window",
+                "severity": 1,
+                "enabled": true,
+                "evaluationFrequency": "PT5M",
+                "windowSize": "PT10M",
+                "scopes": [
+                  "[parameters('workspaceId')]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "AzureDiagnostics\n| where TimeGenerated > ago(10m)\n| where ResourceProvider == \"MICROSOFT.CDN\"\n| where Category == \"FrontDoorAccessLog\"\n| where httpStatusCode_d >= 500 and httpStatusCode_d < 600\n| summarize ErrorCount = count() by bin(TimeGenerated, 5m)\n| where ErrorCount > 20\n",
+                      "timeAggregation": "Count",
+                      "threshold": 0,
+                      "operator": "GreaterThan",
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": {
+                  "actionGroups": [
+                    "[parameters('actionGroupId')]"
+                  ]
+                },
+                "autoMitigate": true
+              }
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2022-06-15",
+              "name": "[format('alert-storage-errors-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "LogAlert",
+              "properties": {
+                "displayName": "[format('[{0}] Storage Account — Server errors (5xx)', toUpper(parameters('environment')))]",
+                "description": "Storage blob service is returning HTTP 5xx errors, indicating service-side issues",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT30M",
+                "scopes": [
+                  "[parameters('workspaceId')]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "StorageBlobLogs\n| where TimeGenerated > ago(30m)\n| where StatusCode >= 500\n| summarize ErrorCount = count() by AccountName, bin(TimeGenerated, 15m)\n| where ErrorCount > 10\n",
+                      "timeAggregation": "Count",
+                      "threshold": 0,
+                      "operator": "GreaterThan",
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": {
+                  "actionGroups": [
+                    "[parameters('actionGroupId')]"
+                  ]
+                },
+                "autoMitigate": true
+              }
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2022-06-15",
+              "name": "[format('alert-keyvault-secret-deleted-{0}', parameters('environment'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "LogAlert",
+              "properties": {
+                "displayName": "[format('[{0}] Key Vault — Secret/Key deleted', toUpper(parameters('environment')))]",
+                "description": "A secret or key was deleted in Key Vault — verify this is intentional",
+                "severity": 3,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT15M",
+                "scopes": [
+                  "[parameters('workspaceId')]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "AzureDiagnostics\n| where TimeGenerated > ago(15m)\n| where ResourceProvider == \"MICROSOFT.KEYVAULT\"\n| where OperationName has_any (\"SecretDelete\", \"KeyDelete\", \"CertificateDelete\")\n| project TimeGenerated, Resource, OperationName, CallerIPAddress, ResultType, requestUri_s\n",
+                      "timeAggregation": "Count",
+                      "threshold": 0,
+                      "operator": "GreaterThan",
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": {
+                  "actionGroups": [
+                    "[parameters('actionGroupId')]"
+                  ]
+                },
+                "autoMitigate": false
+              }
+            }
+          ],
+          "outputs": {
+            "alertRuleIds": {
+              "type": "array",
+              "value": [
+                "[resourceId('Microsoft.Insights/scheduledQueryRules', format('alert-containerapps-errors-{0}', parameters('environment')))]",
+                "[resourceId('Microsoft.Insights/scheduledQueryRules', format('alert-keyvault-throttling-{0}', parameters('environment')))]",
+                "[resourceId('Microsoft.Insights/scheduledQueryRules', format('alert-frontdoor-5xx-{0}', parameters('environment')))]",
+                "[resourceId('Microsoft.Insights/scheduledQueryRules', format('alert-storage-errors-{0}', parameters('environment')))]",
+                "[resourceId('Microsoft.Insights/scheduledQueryRules', format('alert-keyvault-secret-deleted-{0}', parameters('environment')))]"
+              ]
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-action-groups')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-eventhub-export",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "workspaceName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceName.value]"
+          },
+          "eventHubNamespaceName": {
+            "value": "[parameters('eventHubNamespaceName')]"
+          },
+          "eventHubName": {
+            "value": "[parameters('eventHubName')]"
+          },
+          "eventHubSku": {
+            "value": "[parameters('eventHubSku')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "4218780924503317518"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region"
+              }
+            },
+            "environment": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment name"
+              }
+            },
+            "workspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace name — needed to scope the data export child resource"
+              }
+            },
+            "eventHubNamespaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Event Hub Namespace name"
+              }
+            },
+            "eventHubName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Event Hub that receives the exported log tables"
+              }
+            },
+            "eventHubSku": {
+              "type": "string",
+              "defaultValue": "Standard",
+              "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium"
+              ],
+              "metadata": {
+                "description": "Event Hub Namespace SKU. Standard supports 1 consumer group; Premium adds partitions and schema registry."
+              }
+            },
+            "messageRetentionDays": {
+              "type": "int",
+              "defaultValue": 1,
+              "minValue": 1,
+              "maxValue": 7,
+              "metadata": {
+                "description": "Message retention in days (Basic: max 1, Standard/Premium: max 7)"
+              }
+            },
+            "partitionCount": {
+              "type": "int",
+              "defaultValue": 4,
+              "minValue": 1,
+              "maxValue": 32,
+              "metadata": {
+                "description": "Partition count — higher value allows more parallel SIEM consumers"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.EventHub/namespaces",
+              "apiVersion": "2023-01-01-preview",
+              "name": "[parameters('eventHubNamespaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('eventHubSku')]",
+                "tier": "[parameters('eventHubSku')]",
+                "capacity": 1
+              },
+              "properties": {
+                "isAutoInflateEnabled": false,
+                "minimumTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": false,
+                "zoneRedundant": false
+              }
+            },
+            {
+              "type": "Microsoft.EventHub/namespaces/eventhubs",
+              "apiVersion": "2023-01-01-preview",
+              "name": "[format('{0}/{1}', parameters('eventHubNamespaceName'), parameters('eventHubName'))]",
+              "properties": {
+                "messageRetentionInDays": "[parameters('messageRetentionDays')]",
+                "partitionCount": "[parameters('partitionCount')]",
+                "status": "Active"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.EventHub/namespaces/authorizationRules",
+              "apiVersion": "2023-01-01-preview",
+              "name": "[format('{0}/{1}', parameters('eventHubNamespaceName'), 'MonitorExport')]",
+              "properties": {
+                "rights": [
+                  "Manage",
+                  "Send",
+                  "Listen"
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+              "apiVersion": "2023-01-01-preview",
+              "name": "[format('{0}/{1}/{2}', parameters('eventHubNamespaceName'), parameters('eventHubName'), 'siem-consumer')]",
+              "properties": {},
+              "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespaceName'), parameters('eventHubName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/dataExports",
+              "apiVersion": "2020-08-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), format('export-to-eventhub-{0}', parameters('environment')))]",
+              "properties": {
+                "destination": {
+                  "resourceId": "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]",
+                  "metaData": {
+                    "eventHubName": "[parameters('eventHubName')]"
+                  }
+                },
+                "tableNames": [
+                  "AzureActivity",
+                  "AzureDiagnostics",
+                  "AzureMetrics",
+                  "StorageBlobLogs",
+                  "ContainerAppConsoleLogs",
+                  "ContainerAppSystemLogs"
+                ],
+                "enable": true
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespaceName'), parameters('eventHubName'))]",
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "eventHubNamespaceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+            },
+            "eventHubNamespaceName": {
+              "type": "string",
+              "value": "[parameters('eventHubNamespaceName')]"
+            },
+            "eventHubId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespaceName'), parameters('eventHubName'))]"
+            },
+            "eventHubAuthorizationRuleId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('eventHubNamespaceName'), 'MonitorExport')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics')]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('frontDoorProfileName')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-diag-frontdoor",
+      "resourceGroup": "[parameters('frontDoorResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "frontDoorProfileName": {
+            "value": "[parameters('frontDoorProfileName')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "eventHubAuthorizationRuleId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export'), '2025-04-01').outputs.eventHubAuthorizationRuleId.value]"
+          },
+          "eventHubName": {
+            "value": "[parameters('eventHubName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "681375129145799004"
+            }
+          },
+          "parameters": {
+            "frontDoorProfileName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Front Door Standard/Premium profile (Microsoft.Cdn/profiles)"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace resource ID — destination for all log categories"
+              }
+            },
+            "eventHubAuthorizationRuleId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub authorization rule resource ID for SIEM streaming (leave empty to skip)"
+              }
+            },
+            "eventHubName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub name for streaming (required when eventHubAuthorizationRuleId is set)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[resourceId('Microsoft.Cdn/profiles', parameters('frontDoorProfileName'))]",
+              "name": "diag-to-law",
+              "properties": {
+                "workspaceId": "[parameters('workspaceId')]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('eventHubAuthorizationRuleId'))), parameters('eventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('eventHubName'))), parameters('eventHubName'), null())]",
+                "logs": [
+                  {
+                    "category": "FrontDoorAccessLog",
+                    "enabled": true
+                  },
+                  {
+                    "category": "FrontDoorHealthProbeLog",
+                    "enabled": true
+                  },
+                  {
+                    "category": "FrontDoorWebApplicationFirewallLog",
+                    "enabled": true
+                  }
+                ],
+                "metrics": [
+                  {
+                    "category": "AllMetrics",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "diagnosticSettingId": {
+              "type": "string",
+              "value": "[extensionResourceId(resourceId('Microsoft.Cdn/profiles', parameters('frontDoorProfileName')), 'Microsoft.Insights/diagnosticSettings', 'diag-to-law')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics')]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('containerAppsEnvironmentName')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-diag-containerapps",
+      "resourceGroup": "[parameters('containerAppsResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "containerAppsEnvironmentName": {
+            "value": "[parameters('containerAppsEnvironmentName')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "eventHubAuthorizationRuleId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export'), '2025-04-01').outputs.eventHubAuthorizationRuleId.value]"
+          },
+          "eventHubName": {
+            "value": "[parameters('eventHubName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "9696846713077794055"
+            }
+          },
+          "parameters": {
+            "containerAppsEnvironmentName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Container Apps managed environment (Microsoft.App/managedEnvironments)"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace resource ID"
+              }
+            },
+            "eventHubAuthorizationRuleId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub authorization rule resource ID for SIEM streaming (leave empty to skip)"
+              }
+            },
+            "eventHubName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub name for streaming (required when eventHubAuthorizationRuleId is set)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppsEnvironmentName'))]",
+              "name": "diag-to-law",
+              "properties": {
+                "workspaceId": "[parameters('workspaceId')]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('eventHubAuthorizationRuleId'))), parameters('eventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('eventHubName'))), parameters('eventHubName'), null())]",
+                "logs": [
+                  {
+                    "category": "ContainerAppConsoleLogs",
+                    "enabled": true
+                  },
+                  {
+                    "category": "ContainerAppSystemLogs",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "diagnosticSettingId": {
+              "type": "string",
+              "value": "[extensionResourceId(resourceId('Microsoft.App/managedEnvironments', parameters('containerAppsEnvironmentName')), 'Microsoft.Insights/diagnosticSettings', 'diag-to-law')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics')]"
+      ]
+    },
+    {
+      "condition": "[and(and(not(empty(parameters('vnetName'))), not(empty(parameters('vnetResourceId')))), not(empty(parameters('flowLogStorageAccountId'))))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-diag-vnet",
+      "resourceGroup": "[parameters('networkWatcherResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "networkWatcherName": {
+            "value": "[parameters('networkWatcherName')]"
+          },
+          "vnetName": {
+            "value": "[parameters('vnetName')]"
+          },
+          "vnetResourceId": {
+            "value": "[parameters('vnetResourceId')]"
+          },
+          "flowLogStorageAccountId": {
+            "value": "[parameters('flowLogStorageAccountId')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "workspaceCustomerId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceCustomerId.value]"
+          },
+          "workspaceLocation": {
+            "value": "[parameters('location')]"
+          },
+          "trafficAnalyticsInterval": {
+            "value": "[parameters('trafficAnalyticsInterval')]"
+          },
+          "retentionDays": {
+            "value": "[min(parameters('retentionInDays'), 365)]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "9996069555375568595"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region — must match the VNet and Network Watcher region"
+              }
+            },
+            "networkWatcherName": {
+              "type": "string",
+              "defaultValue": "NetworkWatcher_norwayeast",
+              "metadata": {
+                "description": "Name of the Network Watcher for this region (auto-created by Azure)"
+              }
+            },
+            "vnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "VNet name — used only for naming the flow log resource"
+              }
+            },
+            "vnetResourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Full ARM resource ID of the VNet, e.g. /subscriptions/.../virtualNetworks/vnet-name"
+              }
+            },
+            "flowLogStorageAccountId": {
+              "type": "string",
+              "metadata": {
+                "description": "Storage Account resource ID for raw flow log JSON (required by ARM even when Traffic Analytics is enabled)"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace resource ID for Traffic Analytics"
+              }
+            },
+            "workspaceCustomerId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace GUID (customerId) — NOT the ARM resource ID. Output from log-analytics module."
+              }
+            },
+            "workspaceLocation": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region of the Log Analytics Workspace"
+              }
+            },
+            "retentionDays": {
+              "type": "int",
+              "defaultValue": 30,
+              "minValue": 1,
+              "maxValue": 365,
+              "metadata": {
+                "description": "Raw flow log retention in days in the storage account"
+              }
+            },
+            "trafficAnalyticsInterval": {
+              "type": "int",
+              "defaultValue": 10,
+              "allowedValues": [
+                10,
+                60
+              ],
+              "metadata": {
+                "description": "Traffic Analytics aggregation interval in minutes. 10 min = near-real-time, 60 min = lower cost."
+              }
+            },
+            "environment": {
+              "type": "string",
+              "metadata": {
+                "description": "Environment suffix for resource naming"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkWatchers/flowLogs",
+              "apiVersion": "2024-01-01",
+              "name": "[format('{0}/{1}', parameters('networkWatcherName'), format('flowlog-{0}-{1}', parameters('vnetName'), parameters('environment')))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "targetResourceId": "[parameters('vnetResourceId')]",
+                "storageId": "[parameters('flowLogStorageAccountId')]",
+                "enabled": true,
+                "format": {
+                  "type": "JSON",
+                  "version": 2
+                },
+                "flowAnalyticsConfiguration": {
+                  "networkWatcherFlowAnalyticsConfiguration": {
+                    "enabled": true,
+                    "workspaceId": "[parameters('workspaceCustomerId')]",
+                    "workspaceRegion": "[parameters('workspaceLocation')]",
+                    "workspaceResourceId": "[parameters('workspaceId')]",
+                    "trafficAnalyticsInterval": "[parameters('trafficAnalyticsInterval')]"
+                  }
+                },
+                "retentionPolicy": {
+                  "days": "[parameters('retentionDays')]",
+                  "enabled": true
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "flowLogId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/networkWatchers/flowLogs', parameters('networkWatcherName'), format('flowlog-{0}-{1}', parameters('vnetName'), parameters('environment')))]"
+            },
+            "flowLogName": {
+              "type": "string",
+              "value": "[format('flowlog-{0}-{1}', parameters('vnetName'), parameters('environment'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics')]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('storageAccountName')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-diag-storage",
+      "resourceGroup": "[parameters('storageResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "storageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "eventHubAuthorizationRuleId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export'), '2025-04-01').outputs.eventHubAuthorizationRuleId.value]"
+          },
+          "eventHubName": {
+            "value": "[parameters('eventHubName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "18313646210488837827"
+            }
+          },
+          "parameters": {
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Storage account name"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace resource ID"
+              }
+            },
+            "eventHubAuthorizationRuleId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub authorization rule resource ID for SIEM streaming (leave empty to skip)"
+              }
+            },
+            "eventHubName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub name for streaming (required when eventHubAuthorizationRuleId is set)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+              "name": "diag-to-law",
+              "properties": {
+                "workspaceId": "[parameters('workspaceId')]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('eventHubAuthorizationRuleId'))), parameters('eventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('eventHubName'))), parameters('eventHubName'), null())]",
+                "metrics": [
+                  {
+                    "category": "Transaction",
+                    "enabled": true
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]",
+              "name": "diag-to-law",
+              "properties": {
+                "workspaceId": "[parameters('workspaceId')]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('eventHubAuthorizationRuleId'))), parameters('eventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('eventHubName'))), parameters('eventHubName'), null())]",
+                "logs": [
+                  {
+                    "category": "StorageRead",
+                    "enabled": true
+                  },
+                  {
+                    "category": "StorageWrite",
+                    "enabled": true
+                  },
+                  {
+                    "category": "StorageDelete",
+                    "enabled": true
+                  }
+                ],
+                "metrics": [
+                  {
+                    "category": "Transaction",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "storageAccountDiagId": {
+              "type": "string",
+              "value": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), 'Microsoft.Insights/diagnosticSettings', 'diag-to-law')]"
+            },
+            "blobServiceDiagId": {
+              "type": "string",
+              "value": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default'), 'Microsoft.Insights/diagnosticSettings', 'diag-to-law')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics')]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('keyVaultName')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-diag-keyvault",
+      "resourceGroup": "[parameters('keyVaultResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "eventHubAuthorizationRuleId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export'), '2025-04-01').outputs.eventHubAuthorizationRuleId.value]"
+          },
+          "eventHubName": {
+            "value": "[parameters('eventHubName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "15766044995384327840"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault name"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace resource ID"
+              }
+            },
+            "eventHubAuthorizationRuleId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub authorization rule resource ID for SIEM streaming (leave empty to skip)"
+              }
+            },
+            "eventHubName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Event Hub name for streaming (required when eventHubAuthorizationRuleId is set)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+              "name": "diag-to-law",
+              "properties": {
+                "workspaceId": "[parameters('workspaceId')]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('eventHubAuthorizationRuleId'))), parameters('eventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('eventHubName'))), parameters('eventHubName'), null())]",
+                "logs": [
+                  {
+                    "category": "AuditEvent",
+                    "enabled": true
+                  },
+                  {
+                    "category": "AzurePolicyEvaluationDetails",
+                    "enabled": true
+                  }
+                ],
+                "metrics": [
+                  {
+                    "category": "AllMetrics",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "diagnosticSettingId": {
+              "type": "string",
+              "value": "[extensionResourceId(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), 'Microsoft.Insights/diagnosticSettings', 'diag-to-law')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "workspaceId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceId.value]"
+    },
+    "workspaceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.workspaceName.value]"
+    },
+    "appInsightsConnectionString": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-log-analytics'), '2025-04-01').outputs.appInsightsConnectionString.value]"
+    },
+    "actionGroupId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-action-groups'), '2025-04-01').outputs.actionGroupId.value]"
+    },
+    "eventHubNamespaceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export'), '2025-04-01').outputs.eventHubNamespaceName.value]"
+    },
+    "eventHubAuthorizationRuleId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-eventhub-export'), '2025-04-01').outputs.eventHubAuthorizationRuleId.value]"
+    }
+  }
+}
