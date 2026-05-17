@@ -653,6 +653,61 @@ Step 16  Run end-to-end alert test
 
 ---
 
+## Teardown — Delete Everything
+
+Run in this order. Steps 1 and 2 remove resources that live **outside** resource groups and would be left behind if you only deleted the RGs.
+
+### 1. Delete subscription-level diagnostic settings
+
+```powershell
+az monitor diagnostic-settings subscription delete --name "activity-to-law-prod" --yes
+az monitor diagnostic-settings subscription delete --name "activity-to-law-dev" --yes
+```
+
+### 2. Delete VNet flow logs from NetworkWatcherRG
+
+These are child resources of the Network Watcher and are not deleted when the RG is removed.
+Note: `--location` is used instead of `-g` — the location identifies the correct Network Watcher automatically.
+
+```powershell
+az network watcher flow-log delete --location norwayeast -n "flowlog-vnet-monitoring-prod-prod"
+az network watcher flow-log delete --location norwayeast -n "flowlog-vnet-monitoring-dev-dev"
+```
+
+### 3. Delete all resource groups
+
+`--no-wait` runs all deletions in parallel. Each RG takes 2–5 minutes.
+
+```powershell
+az group delete --name rg-monitoring-prod --yes --no-wait
+az group delete --name rg-monitoring-dev  --yes --no-wait
+az group delete --name rg-network-prod    --yes --no-wait
+az group delete --name rg-network-dev     --yes --no-wait
+az group delete --name rg-storage-prod    --yes --no-wait
+az group delete --name rg-storage-dev     --yes --no-wait
+az group delete --name rg-kv-prod         --yes --no-wait
+az group delete --name rg-kv-dev          --yes --no-wait
+```
+
+### 4. Purge soft-deleted Key Vaults
+
+Key Vault soft-delete reserves the name for 90 days after deletion. Run this after the RG deletions complete (verify with `az group show --name rg-kv-prod` returning an error before purging).
+
+Replace `XXXXXXXX` with your suffix.
+
+```powershell
+az keyvault purge --name "kv-mon-prod-XXXXXXXX" --location norwayeast
+az keyvault purge --name "kv-mon-dev-XXXXXXXX"  --location norwayeast
+```
+
+> Skip this step if you are redeploying to a **different subscription** — the names won't conflict since you'll use a new suffix.
+
+### 5. Delete the Power Automate flow (optional)
+
+Go to [make.powerautomate.com](https://make.powerautomate.com) → **My flows** → select the flow → **Delete**.
+
+---
+
 ## Troubleshooting
 
 | Error | Cause | Fix |
