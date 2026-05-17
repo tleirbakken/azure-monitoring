@@ -53,9 +53,18 @@ az account show --query "{name:name, id:id}" -o table
 
 ---
 
-## Step 3 — Update Parameter Files
+## Step 3 — Create and Update Parameter Files
 
-The parameter files contain values from the original subscription that **must be updated** before deployment.
+The repository includes example parameter files with placeholders. Copy them and fill in your values:
+
+```powershell
+Copy-Item parameters/prod.example.bicepparam parameters/prod.bicepparam
+Copy-Item parameters/dev.example.bicepparam  parameters/dev.bicepparam
+```
+
+> The real `*.bicepparam` files are excluded from git (they contain secrets). Only the `*.example.bicepparam` files are committed.
+
+Now edit both files and replace all `XXXXXXXX`, `YOUR-SUBSCRIPTION-ID`, `YOUR-OPS-EMAIL` etc. placeholders.
 
 ### 3a — Update prod.bicepparam
 
